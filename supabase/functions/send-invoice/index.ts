@@ -1,22 +1,30 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-// Get the Resend API key from the environment variables
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
-// Define CORS headers for cross-origin requests
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 serve(async (req) => {
-  // This is needed for CORS preflight requests.
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: CORS_HEADERS });
   }
 
+  // Early exit if RESEND_API_KEY is not set
+  if (!RESEND_API_KEY) {
+    console.error("RESEND_API_KEY is not set in Supabase secrets.");
+    return new Response(
+      JSON.stringify({ success: false, error: "Server configuration error: Missing API key." }),
+      {
+        status: 500,
+        headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+      }
+    );
+  }
+
   try {
-    // Destructure the required fields from the request body
     const {
       customerName,
       customerEmail,
@@ -26,7 +34,6 @@ serve(async (req) => {
       paymentMethod,
     } = await req.json();
 
-    // Validate that all required fields are present
     if (!customerName || !customerEmail || !reservationId || !reservationDate || !totalAmount || !paymentMethod) {
       return new Response(JSON.stringify({ success: false, error: "Missing required fields" }), {
         status: 400,
@@ -34,7 +41,6 @@ serve(async (req) => {
       });
     }
 
-    // Construct the HTML body for the email
     const emailHtml = `
       <!DOCTYPE html>
       <html>
@@ -86,15 +92,15 @@ serve(async (req) => {
       </html>
     `;
 
-    // Create the payload for the Resend API
+    // Using a generic 'from' address for testing.
+    // For production, you must verify your own domain with Resend.
     const resendPayload = {
-      from: "Watee Baroesa <noreply@myapp.com>",
+      from: "Watee Baroesa <onboarding@resend.dev>",
       to: [customerEmail],
       subject: `Invoice for Reservation #${reservationId}`,
       html: emailHtml,
     };
 
-    // Send the email using the Resend API
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -104,20 +110,19 @@ serve(async (req) => {
       body: JSON.stringify(resendPayload),
     });
 
-    // Check if the email was sent successfully
     if (!res.ok) {
       const errorBody = await res.json();
+      console.error("Resend API Error:", errorBody);
       throw new Error(`Resend API Error: ${JSON.stringify(errorBody)}`);
     }
 
-    // Return a success response
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
       status: 200,
     });
 
   } catch (error) {
-    // Return an error response if something went wrong
+    console.error("General Error:", error);
     return new Response(JSON.stringify({ success: false, error: error.message }), {
       headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
       status: 500,
