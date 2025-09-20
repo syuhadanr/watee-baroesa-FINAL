@@ -1,0 +1,117 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Base colors for light theme */
+    --background: 0 0% 98%; /* Light gray for admin background */
+    --foreground: 0 0% 10%; /* Dark gray/black for text */
+
+    --card: 0 0% 100%; /* White for panels/cards */
+    --card-foreground: 0 0% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+
+    --primary: 0 72% 51%; /* Brand Red for active elements */
+    --primary-foreground: 0 0% 100%; /* White */
+
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 89.8%; /* Soft Gray for borders */
+    --input: 0 0% 89.8%;
+    --ring: 0 72% 51%; /* Brand Red for focus rings */
+
+    --radius: 0.5rem;
+
+    /* Custom colors for Watee Baroesa */
+    --royal-red: 0 100% 37.5%; /* #C00000 - Kept for public site */
+    --royal-gold: 42 77% 56%;
+    --pastel-cream: 30 33% 99%;
+    --pastel-blue: 200 50% 76%;
+    --acehnese-green: 120 100% 20%;
+    --acehnese-brown: 29 51% 38%;
+    
+    /* New specific colors for admin UI from image */
+    --admin-bg: var(--muted); /* Using muted for main background */
+    --admin-sidebar-bg: var(--card); /* White for sidebar */
+    --admin-card-bg: var(--card); /* White for cards */
+    --brand-red: var(--primary); /* Royal Red */
+    --brand-red-foreground: var(--primary-foreground); /* White */
+  }
+
+  .dark {
+    /* Dark theme remains unchanged */
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-pastel-cream text-foreground font-serif; /* Default for public site */
+    overflow-x: hidden; /* Added to prevent horizontal scrolling */
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif;
+  }
+
+  /* Scope sans-serif font to admin dashboard */
+  .admin-dashboard {
+    @apply font-sans bg-admin-bg;
+  }
+  .admin-dashboard h1, .admin-dashboard h2, .admin-dashboard h3, .admin-dashboard h4, .admin-dashboard h5, .admin-dashboard h6 {
+    @apply font-sans;
+  }
+}
+
+/* Custom scrollbar for a smoother feel */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--pastel-cream));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--royal-gold));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--royal-red));
+}
