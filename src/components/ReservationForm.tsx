@@ -139,17 +139,39 @@ const ReservationForm = () => {
       payment_status: 'Pending',
     }]).select().single();
 
-    setIsSubmitting(false);
-
     if (error) {
+      setIsSubmitting(false);
       console.error("Error submitting reservation:", error);
       showError("Failed to book reservation. Please try again.");
-    } else {
+    } else if (data) {
       showSuccess("Reservation details confirmed. Please proceed to payment.");
+
+      // Call the send-invoice Edge Function in the background
+      supabase.functions.invoke('send-invoice', {
+        body: {
+          customerName: data.name,
+          customerEmail: data.email,
+          reservationId: data.id.substring(0, 8).toUpperCase(),
+          reservationDate: `${format(parseISO(data.date), "PPP")} at ${data.time}`,
+          totalAmount: formatCurrency(data.deposit_amount),
+          paymentMethod: "Pending Deposit",
+        },
+      }).then(({ error: functionError }) => {
+        if (functionError) {
+          console.error("Failed to send invoice email:", functionError);
+        } else {
+          console.log("Invoice email sent successfully.");
+        }
+      });
+
       form.reset();
       setIsConfirmModalOpen(false);
       setReservationDetails(null);
       navigate(`/reservation/${data.id}`);
+      setIsSubmitting(false);
+    } else {
+      setIsSubmitting(false);
+      showError("Failed to get reservation details after booking.");
     }
   };
 
