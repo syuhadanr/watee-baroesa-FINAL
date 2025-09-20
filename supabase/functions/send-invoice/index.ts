@@ -88,7 +88,7 @@ serve(async (req) => {
 
     // Create the payload for the Resend API
     const resendPayload = {
-      from: "Watee Baroesa <noreply@myapp.com>", // You can customize the sender name and email
+      from: "Watee Baroesa <noreply@myapp.com>",
       to: [customerEmail],
       subject: `Invoice for Reservation #${reservationId}`,
       html: emailHtml,
