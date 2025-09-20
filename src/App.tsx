@@ -3,8 +3,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import PublicLayout from "@/components/layout/PublicLayout"; // Updated import
-import AdminLayout from "@/components/layout/AdminLayout"; // New import
+import PublicLayout from "@/components/layout/PublicLayout";
+import AdminLayout from "@/components/layout/AdminLayout";
 import Index from "./pages/Index";
 import MenuPage from "./pages/MenuPage";
 import ReservationsPage from "./pages/ReservationsPage";
@@ -13,6 +13,7 @@ import AdminPage from "./pages/AdminPage";
 import LoginPage from "./pages/LoginPage";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { AuthProvider } from "@/contexts/AuthContext";
+import ReservationPage from "./pages/ReservationPage"; // Add import
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/menu" element={<MenuPage />} />
               <Route path="/reservations" element={<ReservationsPage />} />
+              <Route path="/reservation/:bookingId" element={<ReservationPage />} /> {/* Add new route */}
               <Route path="/login" element={<LoginPage />} />
               {/* ADD ALL CUSTOM PUBLIC ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

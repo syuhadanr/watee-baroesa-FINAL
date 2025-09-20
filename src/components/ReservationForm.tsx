@@ -19,11 +19,11 @@ import { showSuccess, showError } from "@/utils/toast";
 import { format, parseISO } from "date-fns";
 import { v4 as uuidv4 } from 'uuid';
 import { compressImage } from "@/utils/imageCompressor";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { QRCodeCanvas } from 'qrcode.react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { publicTableOptions } from "@/lib/tableOptions";
-import { Separator } from "@/components/ui/separator"; // Added Separator import
+import { Separator } from "@/components/ui/separator";
 
 const DEFAULT_PRICE_PER_GUEST = 100000;
 
@@ -37,17 +37,7 @@ const formSchema = z.object({
   table_number: z.string().optional(),
   depositAmount: z.coerce.number().min(0, "Deposit cannot be negative."),
   message: z.string().optional(),
-  paymentProof: z.any().optional(), // This will be conditionally validated
-}).refine(data => {
-  if (data.guests > 0) {
-    const totalBill = data.guests * DEFAULT_PRICE_PER_GUEST;
-    const minDeposit = totalBill * 0.20;
-    return data.depositAmount >= minDeposit;
-  }
-  return true;
-}, {
-  message: "Deposit must be at least 20% of the total bill.",
-  path: ["depositAmount"],
+  paymentProof: z.any().optional(),
 });
 
 type ReservationFormValues = z.infer<typeof formSchema>;
@@ -80,6 +70,7 @@ const ReservationForm = () => {
   const [reservationDetails, setReservationDetails] = useState<ReservationFormValues | null>(null);
   const [qrPayload, setQrPayload] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
 
   const form = useForm<ReservationFormValues>({
     resolver: zodResolver(formSchema),
@@ -102,7 +93,7 @@ const ReservationForm = () => {
   const minDeposit = totalBill * 0.20;
 
   useEffect(() => {
-    form.setValue("depositAmount", minDeposit); // Set default deposit to min 20%
+    form.setValue("depositAmount", minDeposit);
   }, [guests, minDeposit, form]);
 
   const fetchReservations = async () => {
@@ -129,9 +120,6 @@ const ReservationForm = () => {
 
   const handleDetailsSubmit = async (values: ReservationFormValues) => {
     setReservationDetails(values);
-    const newReservationId = uuidv4(); // Generate a temporary ID for QR payload
-    const depositAmountIDR = values.depositAmount;
-    setQrPayload(`id=${newReservationId};dep=${depositAmountIDR}`);
     setStep('review');
   };
 
@@ -139,42 +127,10 @@ const ReservationForm = () => {
     if (!reservationDetails) return;
 
     setIsSubmitting(true);
-    let paymentProofUrl: string | null = null;
-    let imageFile = values.paymentProof?.[0]; // Use values from the form for paymentProof
-
-    if (!imageFile) {
-      showError("Payment proof is required.");
-      setIsSubmitting(false);
-      return;
-    }
-
-    try {
-      imageFile = await compressImage(imageFile);
-      const fileExt = imageFile.name.split('.').pop();
-      const fileName = `${Date.now()}-${reservationDetails.name.replace(/\s/g, '_')}.${fileExt}`;
-      const filePath = `payment_proofs/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("assets")
-        .upload(filePath, imageFile);
-
-      if (uploadError) {
-        showError("Failed to upload payment proof.");
-        console.error(uploadError);
-        setIsSubmitting(false);
-        return;
-      }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from("assets")
-        .getPublicUrl(filePath);
-      
-      paymentProofUrl = publicUrl;
-    } catch (error) {
-      setIsSubmitting(false);
-      return;
-    }
-
+    
+    // Generate unique booking ID
+    const bookingId = uuidv4();
+    
     const calculatedTotalBill = reservationDetails.guests * DEFAULT_PRICE_PER_GUEST;
     const depositPercentage = calculatedTotalBill > 0 ? (reservationDetails.depositAmount / calculatedTotalBill) * 100 : 0;
 
@@ -190,24 +146,23 @@ const ReservationForm = () => {
       total_bill: calculatedTotalBill,
       deposit_amount: reservationDetails.depositAmount,
       deposit_percentage: depositPercentage,
-      status: 'Pending', // Initial status for reservation
-      payment_status: 'Deposit', // Set payment_status to Deposit as a deposit is made
-      qr_payload: qrPayload, // Store the QR payload string
-      payment_proof_url: paymentProofUrl, // Store the uploaded proof URL
+      status: 'pending_payment', // New status
+      payment_status: 'Pending',
+      booking_id: bookingId, // Store the booking ID
     }]);
 
     if (error) {
       console.error("Error submitting reservation:", error);
       showError("Failed to book reservation. Please try again.");
+      setIsSubmitting(false);
     } else {
-      showSuccess("Reservation booked successfully! Awaiting admin confirmation.");
-      form.reset();
-      setReservationDetails(null);
-      setQrPayload('');
-      setStep('success');
-      fetchReservations();
+      showSuccess("Reservation booked successfully! Redirecting to confirmation...");
+      
+      // Redirect to the reservation confirmation page
+      setTimeout(() => {
+        navigate(`/reservation/${bookingId}`);
+      }, 1500);
     }
-    setIsSubmitting(false);
   };
 
   return (
@@ -368,7 +323,7 @@ const ReservationForm = () => {
                       )}
                     />
                     <Button type="submit" disabled={!form.formState.isValid || form.formState.isSubmitting} className="w-full bg-royal-red text-pastel-cream hover:bg-royal-gold hover:text-royal-red text-lg py-6 transition-colors disabled:bg-gray-400">
-                      {form.formState.isSubmitting ? "Processing..." : "Review & Pay"}
+                      {form.formState.isSubmitting ? "Processing..." : "Review Reservation"}
                     </Button>
                   </form>
                 </Form>
@@ -379,7 +334,7 @@ const ReservationForm = () => {
           {step === 'review' && reservationDetails && (
             <Card className="bg-white border-royal-gold shadow-lg">
               <CardHeader>
-                <CardTitle className="text-3xl text-royal-red">Review Your Reservation & Pay</CardTitle>
+                <CardTitle className="text-3xl text-royal-red">Review Your Reservation</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="bg-muted/50 p-4 rounded-md space-y-2">
@@ -401,92 +356,30 @@ const ReservationForm = () => {
                 <Separator className="bg-royal-gold" />
 
                 <div className="space-y-4 text-center">
-                  <h3 className="text-xl font-semibold text-royal-red">Payment Details</h3>
-                  <p className="text-royal-red/80">Please make a deposit payment of <strong className="text-royal-red">{formatCurrency(reservationDetails.depositAmount)}</strong> using one of the methods below.</p>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* QR Code Payment */}
-                    <div className="flex flex-col items-center p-4 bg-pastel-cream border border-royal-gold rounded-md shadow-sm">
-                      <p className="font-semibold text-royal-red mb-2">Scan to Pay (Example)</p>
-                      <QRCodeCanvas value={qrPayload} size={160} level="H" className="mb-3" />
-                      <p className="text-sm text-muted-foreground">
-                        (This is a placeholder QR code for demonstration.)
-                      </p>
-                    </div>
-
-                    {/* Bank Transfer Details */}
-                    <div className="flex flex-col items-start p-4 bg-pastel-cream border border-royal-gold rounded-md shadow-sm text-left">
-                      <p className="font-semibold text-royal-red mb-2">Bank Transfer</p>
-                      <p className="text-royal-red/80"><strong>Bank Name:</strong> Bank Watee Baroesa</p>
-                      <p className="text-royal-red/80"><strong>Account Name:</strong> PT. Watee Baroesa</p>
-                      <p className="text-royal-red/80"><strong>Account Number:</strong> 123-456-7890</p>
-                      <p className="text-sm text-muted-foreground mt-2">
-                        Please transfer the deposit amount to this account.
-                      </p>
-                    </div>
-                  </div>
-                  <p className="text-royal-red/80 mt-4">After making the payment, please upload the proof below.</p>
+                  <h3 className="text-xl font-semibold text-royal-red">Payment Information</h3>
+                  <p className="text-royal-red/80">
+                    Your reservation will be confirmed once we receive your deposit payment. 
+                    We will send payment instructions to your email shortly.
+                  </p>
                 </div>
 
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(handleFinalSubmit)} className="space-y-6">
-                    <FormField
-                      control={form.control}
-                      name="paymentProof"
-                      render={({ field: { onChange, value, ...rest } }) => (
-                        <FormItem>
-                          <FormLabel className="text-royal-red">Upload Payment Proof (Image/PDF)</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="file"
-                              accept="image/*,application/pdf"
-                              {...rest}
-                              onChange={(e) => onChange(e.target.files)}
-                              className="border-royal-red focus:border-royal-gold"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setStep('details')}
-                        className="flex-grow border-royal-red text-royal-red hover:bg-royal-red hover:text-pastel-cream"
-                      >
-                        Back to Details
-                      </Button>
-                      <Button
-                        type="submit"
-                        disabled={isSubmitting || !form.formState.isValid}
-                        className="flex-grow bg-royal-red text-pastel-cream hover:bg-royal-gold hover:text-royal-red text-lg py-6 transition-colors disabled:bg-gray-400"
-                      >
-                        {isSubmitting ? "Submitting..." : "Confirm Reservation"}
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
-          )}
-
-          {step === 'success' && (
-            <Card className="bg-white border-royal-gold shadow-lg col-span-full text-center p-8">
-              <CardHeader>
-                <CardTitle className="text-3xl text-acehnese-green">Reservation Confirmed!</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-royal-red/80 text-lg">Thank you for your reservation at Watee Baroesa.</p>
-                <p className="text-royal-red/80">Your payment proof has been received and your reservation is now awaiting admin confirmation.</p>
-                <p className="text-royal-red/80">We look forward to welcoming you!</p>
-                <Button onClick={() => setStep('details')} className="bg-royal-red text-pastel-cream hover:bg-royal-gold hover:text-royal-red text-lg py-6 transition-colors">
-                  Make Another Reservation
-                </Button>
-                <Button asChild variant="outline" className="ml-4 border-royal-red text-royal-red hover:bg-royal-red hover:text-pastel-cream">
-                  <RouterLink to="/">Return to Home</RouterLink>
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setStep('details')}
+                    className="flex-grow border-royal-red text-royal-red hover:bg-royal-red hover:text-pastel-cream"
+                  >
+                    Back to Details
+                  </Button>
+                  <Button
+                    onClick={() => handleFinalSubmit(reservationDetails)}
+                    disabled={isSubmitting}
+                    className="flex-grow bg-royal-red text-pastel-cream hover:bg-royal-gold hover:text-royal-red text-lg py-6 transition-colors disabled:bg-gray-400"
+                  >
+                    {isSubmitting ? "Submitting..." : "Confirm Reservation"}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           )}
