@@ -13,6 +13,7 @@ import AdminPage from "./pages/AdminPage";
 import LoginPage from "./pages/LoginPage";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { AuthProvider } from "@/contexts/AuthContext";
+import ReservationStatusPage from "./pages/ReservationStatusPage";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/menu" element={<MenuPage />} />
               <Route path="/reservations" element={<ReservationsPage />} />
+              <Route path="/reservation/:bookingId" element={<ReservationStatusPage />} />
               <Route path="/login" element={<LoginPage />} />
               {/* ADD ALL CUSTOM PUBLIC ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
