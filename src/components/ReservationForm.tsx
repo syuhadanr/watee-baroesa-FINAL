@@ -18,9 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
 import { format, parseISO } from "date-fns";
 import { v4 as uuidv4 } from 'uuid';
-import { compressImage } from "@/utils/imageCompressor";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
-import { QRCodeCanvas } from 'qrcode.react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { publicTableOptions } from "@/lib/tableOptions";
 import { Separator } from "@/components/ui/separator";
@@ -37,7 +35,6 @@ const formSchema = z.object({
   table_number: z.string().optional(),
   depositAmount: z.coerce.number().min(0, "Deposit cannot be negative."),
   message: z.string().optional(),
-  paymentProof: z.any().optional(),
 });
 
 type ReservationFormValues = z.infer<typeof formSchema>;
@@ -66,9 +63,8 @@ const formatCurrency = (amount: number) => {
 const ReservationForm = () => {
   const [existingReservations, setExistingReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [step, setStep] = useState<'details' | 'review' | 'success'>('details');
+  const [step, setStep] = useState<'details' | 'review'>('details');
   const [reservationDetails, setReservationDetails] = useState<ReservationFormValues | null>(null);
-  const [qrPayload, setQrPayload] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
@@ -84,7 +80,6 @@ const ReservationForm = () => {
       table_number: "Auto Assign",
       depositAmount: 0,
       message: "",
-      paymentProof: undefined,
     },
   });
 
@@ -123,7 +118,7 @@ const ReservationForm = () => {
     setStep('review');
   };
 
-  const handleFinalSubmit = async (values: ReservationFormValues) => {
+  const handleFinalSubmit = async () => {
     if (!reservationDetails) return;
 
     setIsSubmitting(true);
@@ -146,9 +141,9 @@ const ReservationForm = () => {
       total_bill: calculatedTotalBill,
       deposit_amount: reservationDetails.depositAmount,
       deposit_percentage: depositPercentage,
-      status: 'pending_payment', // New status
+      status: 'pending_payment',
       payment_status: 'Pending',
-      booking_id: bookingId, // Store the booking ID
+      booking_id: bookingId,
     }]);
 
     if (error) {
@@ -159,9 +154,7 @@ const ReservationForm = () => {
       showSuccess("Reservation booked successfully! Redirecting to confirmation...");
       
       // Redirect to the reservation confirmation page
-      setTimeout(() => {
-        navigate(`/reservation/${bookingId}`);
-      }, 1500);
+      navigate(`/reservation/${bookingId}`);
     }
   };
 
@@ -322,8 +315,8 @@ const ReservationForm = () => {
                           </FormItem>
                       )}
                     />
-                    <Button type="submit" disabled={!form.formState.isValid || form.formState.isSubmitting} className="w-full bg-royal-red text-pastel-cream hover:bg-royal-gold hover:text-royal-red text-lg py-6 transition-colors disabled:bg-gray-400">
-                      {form.formState.isSubmitting ? "Processing..." : "Review Reservation"}
+                    <Button type="submit" className="w-full bg-royal-red text-pastel-cream hover:bg-royal-gold hover:text-royal-red text-lg py-6 transition-colors">
+                      Review Reservation
                     </Button>
                   </form>
                 </Form>
@@ -373,7 +366,7 @@ const ReservationForm = () => {
                     Back to Details
                   </Button>
                   <Button
-                    onClick={() => handleFinalSubmit(reservationDetails)}
+                    onClick={handleFinalSubmit}
                     disabled={isSubmitting}
                     className="flex-grow bg-royal-red text-pastel-cream hover:bg-royal-gold hover:text-royal-red text-lg py-6 transition-colors disabled:bg-gray-400"
                   >
