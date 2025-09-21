@@ -302,6 +302,16 @@ const AdminPage = () => {
     } else {
       showSuccess("Payment confirmed and reservation updated!");
       fetchData();
+      // Trigger confirmation email
+      try {
+        const { error: functionError } = await supabase.functions.invoke('send-booking-confirmation', {
+          body: { bookingId: reservationId },
+        });
+        if (functionError) throw functionError;
+      } catch (e) {
+        console.error("Failed to trigger confirmation email:", e);
+        showError("Booking confirmed, but failed to send confirmation email.");
+      }
     }
   };
 
