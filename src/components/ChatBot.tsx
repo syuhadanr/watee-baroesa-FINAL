@@ -115,12 +115,11 @@ const ChatBot = () => {
         let botResponse = "I'm sorry, I don't have information on that. You can try asking about our menu, reservations, special offers, or contact details.";
         let botAction: Action | undefined = undefined;
 
-        const isWhatsAppBooking = (lowerCaseInput.includes("wa") || lowerCaseInput.includes("whatsapp")) &&
-                                  (lowerCaseInput.includes("book") || lowerCaseInput.includes("booking") || lowerCaseInput.includes("reservation") || lowerCaseInput.includes("pesan") || lowerCaseInput.includes("hubungi") || lowerCaseInput.includes("contact"));
+        const isWhatsAppInquiry = lowerCaseInput.includes("wa") || lowerCaseInput.includes("whatsapp");
 
-        if (isWhatsAppBooking) {
-          botResponse = "Bisa! Klik tombol di bawah untuk lanjut chat & booking via WhatsApp.";
-          botAction = { text: "Book via WhatsApp", link: WA_BOOK_URL };
+        if (isWhatsAppInquiry) {
+          botResponse = "Tentu! Anda bisa menghubungi kami langsung di WhatsApp untuk pertanyaan apa pun, termasuk booking, detail menu, atau promo. Klik tombol di bawah ini.";
+          botAction = { text: "Contact via WhatsApp", link: WA_BOOK_URL };
         } else if (lowerCaseInput.includes("menu") || lowerCaseInput.includes("food") || lowerCaseInput.includes("dishes")) {
           if (menuItems.length > 0) {
             const sampleItems = menuItems.slice(0, 2).map(item => `${item.name} (${item.price})`).join(", ");
@@ -173,7 +172,7 @@ const ChatBot = () => {
   const initialFaqSuggestions = [
     { question: "What's on the menu?", keywords: ["menu", "food"] },
     { question: "How do I book a table?", keywords: ["book", "reservation"] },
-    { question: "Book via WhatsApp", keywords: ["whatsapp", "wa"] },
+    { question: "Contact via WhatsApp", keywords: ["whatsapp", "wa"] },
     { question: "Do you have any special offers?", keywords: ["offers", "deals"] },
     { question: "What are your opening hours?", keywords: ["hours", "open"] },
     { question: "Where are you located?", keywords: ["location", "address"] },
