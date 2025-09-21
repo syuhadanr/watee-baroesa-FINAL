@@ -66,7 +66,9 @@ serve(async (req) => {
 
     // 4. Send email via Resend
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
-    const reservationUrl = `https://pfammobcbeahzwfktjov.supabase.co/reservation/${bookingId}`;
+    // Use the SITE_URL secret for the link, with a fallback.
+    const siteUrl = Deno.env.get('SITE_URL') || `https://pfammobcbeahzwfktjov.supabase.co`;
+    const reservationUrl = `${siteUrl}/reservation/${bookingId}`;
 
     const emailHtml = `
       <html>
