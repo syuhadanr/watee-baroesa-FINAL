@@ -46,6 +46,8 @@ interface ContactInfo {
   opening_hours?: string | null;
 }
 
+const WA_BOOK_URL = "https://api.whatsapp.com/send/?phone=6285194992593&text=Halo+Watee+Baroesa%2C+saya+mau+booking+meja.%0ANama%3A+%5Bisi%5D%0ATanggal%3A+%5Bisi%5D%0AJam%3A+%5Bisi%5D%0ATamu%3A+%5Bisi%5D&type=phone_number&app_absent=0";
+
 const ChatBot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -113,7 +115,13 @@ const ChatBot = () => {
         let botResponse = "I'm sorry, I don't have information on that. You can try asking about our menu, reservations, special offers, or contact details.";
         let botAction: Action | undefined = undefined;
 
-        if (lowerCaseInput.includes("menu") || lowerCaseInput.includes("food") || lowerCaseInput.includes("dishes")) {
+        const isWhatsAppBooking = (lowerCaseInput.includes("wa") || lowerCaseInput.includes("whatsapp")) &&
+                                  (lowerCaseInput.includes("book") || lowerCaseInput.includes("booking") || lowerCaseInput.includes("reservation") || lowerCaseInput.includes("pesan") || lowerCaseInput.includes("hubungi") || lowerCaseInput.includes("contact"));
+
+        if (isWhatsAppBooking) {
+          botResponse = "Bisa! Klik tombol di bawah untuk lanjut chat & booking via WhatsApp.";
+          botAction = { text: "Book via WhatsApp", link: WA_BOOK_URL };
+        } else if (lowerCaseInput.includes("menu") || lowerCaseInput.includes("food") || lowerCaseInput.includes("dishes")) {
           if (menuItems.length > 0) {
             const sampleItems = menuItems.slice(0, 2).map(item => `${item.name} (${item.price})`).join(", ");
             botResponse = `We have a diverse menu! For example, you might enjoy ${sampleItems}. You can view our full menu here:`;
@@ -165,6 +173,7 @@ const ChatBot = () => {
   const initialFaqSuggestions = [
     { question: "What's on the menu?", keywords: ["menu", "food"] },
     { question: "How do I book a table?", keywords: ["book", "reservation"] },
+    { question: "Book via WhatsApp", keywords: ["whatsapp", "wa"] },
     { question: "Do you have any special offers?", keywords: ["offers", "deals"] },
     { question: "What are your opening hours?", keywords: ["hours", "open"] },
     { question: "Where are you located?", keywords: ["location", "address"] },
@@ -230,9 +239,15 @@ const ChatBot = () => {
                 {msg.loading ? <Loader2 className="h-5 w-5 animate-spin" /> : msg.text}
               </div>
               {msg.action && !msg.loading && (
-                <Button asChild size="sm" className="mt-2 bg-royal-gold text-royal-red hover:bg-royal-red hover:text-pastel-cream">
-                  <Link to={msg.action.link}>{msg.action.text}</Link>
-                </Button>
+                msg.action.link.startsWith("http") ? (
+                  <Button asChild size="sm" className="mt-2 bg-royal-gold text-royal-red hover:bg-royal-red hover:text-pastel-cream">
+                    <a href={msg.action.link} target="_blank" rel="noopener noreferrer">{msg.action.text}</a>
+                  </Button>
+                ) : (
+                  <Button asChild size="sm" className="mt-2 bg-royal-gold text-royal-red hover:bg-royal-red hover:text-pastel-cream">
+                    <Link to={msg.action.link}>{msg.action.text}</Link>
+                  </Button>
+                )
               )}
             </div>
           ))}
