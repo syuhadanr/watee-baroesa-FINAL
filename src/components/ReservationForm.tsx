@@ -149,6 +149,18 @@ const ReservationForm = () => {
       form.reset();
       setIsConfirmModalOpen(false);
       setReservationDetails(null);
+
+      // Fire-and-forget email sending
+      try {
+        const { error: functionError } = await supabase.functions.invoke('send-pending-invoice', {
+          body: { bookingId: data.id },
+        });
+        if (functionError) throw functionError;
+      } catch (e) {
+        console.error("Failed to trigger pending invoice email:", e);
+        // Do not block user navigation
+      }
+
       navigate(`/reservation/${data.id}`);
     }
   };
