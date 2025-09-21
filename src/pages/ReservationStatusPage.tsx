@@ -34,6 +34,8 @@ interface Reservation {
   payment_proof_url?: string | null;
   qr_payload?: string | null;
   rejection_reason?: string | null;
+  invoice_no?: string | null;
+  invoice_issued_at?: string | null;
 }
 
 const paymentFormSchema = z.object({
@@ -176,10 +178,11 @@ const ReservationStatusPage = () => {
 
         <Card className="max-w-3xl mx-auto bg-white border-royal-gold shadow-lg">
           <CardHeader>
-            <CardTitle className="text-3xl text-royal-red">Booking ID: {reservation.id.substring(0, 8)}</CardTitle>
+            <CardTitle className="text-3xl text-royal-red">Invoice: {reservation.invoice_no}</CardTitle>
             <CardDescription className="text-lg font-semibold pt-2">
               <StatusDisplay status={reservation.status} paymentStatus={reservation.payment_status} rejectionReason={reservation.rejection_reason} />
             </CardDescription>
+            {reservation.invoice_issued_at && <p className="text-sm text-muted-foreground pt-1">Issued on: {format(parseISO(reservation.invoice_issued_at), "PPP p")}</p>}
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="bg-muted/50 p-4 rounded-md space-y-2">

@@ -67,6 +67,8 @@ interface Reservation {
   rejected_at?: string | null;
   rejected_by?: string | null;
   rejection_reason?: string | null;
+  invoice_no?: string | null;
+  invoice_issued_at?: string | null;
 }
 
 interface Subscriber {
@@ -354,7 +356,8 @@ const AdminPage = () => {
       res.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (res.phone && res.phone.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (res.message && res.message.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (res.notes && res.notes.toLowerCase().includes(searchQuery.toLowerCase()));
+      (res.notes && res.notes.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (res.invoice_no && res.invoice_no.toLowerCase().includes(searchQuery.toLowerCase()));
 
     const matchesStatus =
       statusFilter === 'all' || res.status === statusFilter;
@@ -424,7 +427,7 @@ const AdminPage = () => {
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
-                        placeholder="Search by name, email, phone, message, notes..."
+                        placeholder="Search by name, email, invoice, notes..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="pl-9 border-border focus:border-brand-red focus:ring-brand-red"
@@ -520,7 +523,7 @@ const AdminPage = () => {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="min-w-[120px] text-muted-foreground">Name</TableHead>
+                          <TableHead className="min-w-[180px] text-muted-foreground">Guest / Invoice</TableHead>
                           <TableHead className="min-w-[120px] text-muted-foreground">Date & Time</TableHead>
                           <TableHead className="min-w-[80px] text-muted-foreground">Guests</TableHead>
                           <TableHead className="min-w-[150px] text-muted-foreground">Status</TableHead>
@@ -545,6 +548,7 @@ const AdminPage = () => {
                               <TableCell>
                                 <p className="font-medium text-foreground">{res.name}</p>
                                 <p className="text-xs text-muted-foreground">{res.email}</p>
+                                {res.invoice_no && <p className="text-xs font-mono text-muted-foreground mt-1">{res.invoice_no}</p>}
                               </TableCell>
                               <TableCell className="text-foreground">
                                 {format(parseISO(res.date), "PPP")} at {res.time}
