@@ -97,7 +97,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Watee Baroesa <onboarding@resend.dev>',
+        from: 'Watee Baroesa <reservations@mogjastore.com>',
         to: [reservation.email],
         subject: `Invoice ${reservation.invoice_no} – Pending Payment`,
         html: emailHtml,
